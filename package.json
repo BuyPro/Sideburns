@@ -1,0 +1,19 @@
+{
+  "name": "sideburns",
+  "version": "0.1.0",
+  "description": "A super small templating library for different types of files",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BuyPro/Sideburns.git"
+  },
+  "keywords": [
+    "templating"
+  ],
+  "author": "Louis Capitanchik <contact@louiscap.co> (http://github.com/Commander-lol)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/BuyPro/Sideburns/issues"
+  },
+  "homepage": "https://github.com/BuyPro/Sideburns"
+}
