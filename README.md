@@ -87,6 +87,6 @@ I said hey"
 * / - Indicates that this tag ends the block that was previously opened with the same name. Blocks _must_ be ended in the reverse order that they were opened in - e.g. if you open a context block called `obj` and then a looping block called `arr`, you **must** close `arr` before you can close `obj`. Any other situation will throw a `SyntaxError`.
 
 ### context \<Object\>
-The context parameter is simply an object that should contain the properties used in the template, in the correct formats (e.g. names used in context blocks should be objects, names used in looping blocks should be array-like, etc). Looping blocks are limited to arrays, but instead can be any object with a `length` property and numerically indexed values.
+The context parameter is simply an object that should contain the properties used in the template, in the correct formats (e.g. names used in context blocks should be objects, names used in looping blocks should be array-like, etc). Looping blocks aren't limited to arrays, but instead can be any object with a `length` property and numerically indexed values.
 
 At present, any values that are not defined will be inserted in place as 'undefined'. In the case of context and looping blocks, the interpreter will throw an error as it can't access properties of undefined. While an option may be added in future to ignore undefined values/blocks, the current behaviour will remain the default as it is far more likely that such a situation will arise out of user error than be an intended consequence. 
