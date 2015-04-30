@@ -96,9 +96,5 @@
         };
 
 
-    if (typeof module !== "undefined" && module.exports) {
-        module.exports = render;
-    } else {
-        window.sideburns = render;
-    }
+    window.tinymvc.sideburns = render;
 }());
