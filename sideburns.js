@@ -1,6 +1,6 @@
 (function () {
     'use strict';
-    var reCapture = /\|\\\s*(\S+.*\S+)\s*\/\|/,
+    var reCapture = /\[\[\s*(\S+.*\S+)\s*\]\]/,
         reContext = /\&\s*/,
         reLoop = /\*\s*/,
         reEscape = /\!\s*/,
@@ -52,7 +52,6 @@
                 loop = null;
 
             while ((match = reCapture.exec(src)) !== null) {
-                reCapture = /\|\\\s*(\S+.*\S+)\s*\/\|/;
                 index = match.index;
                 str += src.slice(0, index);
                 src = src.slice(index + match[0].length);
