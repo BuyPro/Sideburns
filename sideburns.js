@@ -1,10 +1,38 @@
 (function () {
     'use strict';
-    var reCapture = /\[\[\s*(\S+.*\S+)\s*\]\]/,
-        reContext = /\&\s*/,
-        reLoop = /\*\s*/,
-        reEscape = /\!\s*/,
-
+    var options = {
+            ignoreUndefined: false,
+            defaultRegex: true,
+            tags: {
+                capture: ["[[", "]]"],
+                context: "&",
+                loop: "*",
+                escape: "!",
+                close: "/"
+            },
+            precomp: {
+                capture: /\[\[\s*(\S+.*\S+)\s*\]\]/,
+                context: /\&\s*/,
+                loop: /\*\s*/,
+                escape: /\!\s*/,
+                close: /\/\s*/
+            }
+        },
+        escapeRegex = function (str) {
+            return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        },
+        getRegex = function(type) {
+            if(options.defaultRegex){
+                return options.precomp[type];
+            } else {
+                if (type === "capture") {
+                    var parts = options.tags.capture;
+                    return new RegExp(escapeRegex(parts[0] + "\\s*(\\S+.*\\S+)\\s*" + parts[1]));
+                } else {
+                    return new RegExp(escapeRegex(options.tags[type]) + "\\s*");
+                }
+            }
+        },
         Stack = function () {
             var self = this;
             this.length = 0;
@@ -49,7 +77,12 @@
                 tag = "",
                 str = "",
                 context = data,
-                loop = null;
+                loop = null,
+                reCapture = getRegex("capture"),
+                reContext = getRegex("context"),
+                reLoop = getRegex("loop"),
+                reEscape = getRegex("escape"),
+                reClose = getRegex("close");
 
             while ((match = reCapture.exec(src)) !== null) {
                 index = match.index;
@@ -64,13 +97,7 @@
 
 
     if (typeof module !== "undefined" && module.exports) {
-        module.exports = {
-            capture: reCapture,
-            context: reContext,
-            loop: reLoop,
-            escape: reEscape,
-            render: render
-        };
+        module.exports = render;
     } else {
         window.sideburns = render;
     }
