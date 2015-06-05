@@ -227,6 +227,7 @@
                     i += match.index + match[0].length;
                 } else {
                     tokens.push(new Token("STRING", chunk));
+                    i += chunk.length;
                 }
             }
             tokens.push(new Token("EOD"));
