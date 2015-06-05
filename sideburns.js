@@ -160,9 +160,7 @@
                 that.stateSet[from][tokenName] = {to: to, onMove: onMove};
             }
             this.processToken = function(token, context) {
-                console.log(token);
                 var state = that.stateSet[that.state];
-                console.log(token.ident);
                 if(state.hasOwnProperty(token.ident)){
                     if(state[token.ident].onMove(token, context)){
                         that.state = state[token.ident].to;
@@ -339,9 +337,9 @@
                             to: "global",
                             onMove: function(token, context){
                                 if(context.status.tagModifiers.loop){
-                                    console.log("In a loop");
+                                    //TODO: Handle loops
                                     if(context.status.tagModifiers.close){
-                                        console.log("Closing");
+                                        //TODO: Handle closed loops
                                     }
                                 } else if(context.status.tagModifiers.block){
                                     if(context.status.tagModifiers.close){
