@@ -51,10 +51,22 @@
         getDeepProperty = function(ident, obj) {
             var ret = null,
                 recurse = function(propList, obj) {
+                    var curident;
                     if(propList.length > 1) {
-                        recurse(propList, obj[list.shift()]);
+                        if(obj.hasOwnProperty(propList[0])){
+                            recurse(propList, obj[list.shift()]);
+                        } else {
+                            curident = propList.reduce(function(a, b, i){
+                                return a + (i>0 ? "." : "") + b;
+                            });
+                            throw new Error("Invalid proprty, missing expected data \"" + curident + "\" (IDENT: " + ident + ") from data " + JSON.stringify(obj));
+                        }
                     } else {
-                        ret = obj[propList[0]];
+                        if(obj.hasOwnProperty(propList[0])){
+                            ret = obj[propList[0]];
+                        } else {
+                            throw new Error("Invalid proprty, missing expected data \"" + propList[0] + "\" (IDENT: " + ident + ") from data " + JSON.stringify(obj));
+                        }
                     }
                 },
                 list;
