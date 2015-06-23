@@ -1,3 +1,4 @@
+/*jslint node: true */
 (function () {
     'use strict';
     var globalOptions = {
@@ -16,11 +17,11 @@
                 }
             }
         },
-        deepMergeJson = function(obja, objb) {
+        deepMergeJson = function (obja, objb) {
             var prop;
-            for(prop in objb) {
-                if(objb.hasOwnProperty(prop)) {
-                    if(typeof(obja[prop]) === 'object' && typeof(objb[prop]) === 'object') {
+            for (prop in objb) {
+                if (objb.hasOwnProperty(prop)) {
+                    if (typeof (obja[prop]) === 'object' && typeof (objb[prop]) === 'object') {
                         obja[prop] = deepMergeJson(obja[prop], objb[prop]);
                     } else {
                         obja[prop] = objb[prop];
@@ -29,18 +30,18 @@
             }
             return obja;
         },
-        setDeepProperty = function(ident, value, obj) {
-            var recurse = function(propList, value, obj) {
-                    if(propList.length > 1) {
+        setDeepProperty = function (ident, value, obj) {
+            var list,
+                recurse = function (propList, value, obj) {
+                    if (propList.length > 1) {
                         recurse(propList, value, obj[list.shift()]);
                     } else {
                         obj[propList[0]] = value;
                     }
-                },
-                list;
+                };
 
-            if(!ident.push && !ident.map) {
-                list = ident.split(".").map(function(e){return e.trim()});
+            if (!ident.push && !ident.map) {
+                list = ident.split(".").map(function (e) {return e.trim(); });
             } else {
                 list = ident;
             }
@@ -48,31 +49,31 @@
             recurse(list, value, obj);
             return obj;
         },
-        getDeepProperty = function(ident, obj) {
+        getDeepProperty = function (ident, obj) {
             var ret = null,
-                recurse = function(propList, obj) {
+                list,
+                recurse = function (propList, obj) {
                     var curident;
-                    if(propList.length > 1) {
-                        if(obj.hasOwnProperty(propList[0])){
+                    if (propList.length > 1) {
+                        if (obj.hasOwnProperty(propList[0])) {
                             recurse(propList, obj[list.shift()]);
                         } else {
-                            curident = propList.reduce(function(a, b, i){
-                                return a + (i>0 ? "." : "") + b;
+                            curident = propList.reduce(function (a, b, i) {
+                                return a + (i > 0 ? "." : "") + b;
                             });
                             throw new Error("Invalid proprty, missing expected data \"" + curident + "\" (IDENT: " + ident + ") from data " + JSON.stringify(obj));
                         }
                     } else {
-                        if(obj.hasOwnProperty(propList[0])){
+                        if (obj.hasOwnProperty(propList[0])) {
                             ret = obj[propList[0]];
                         } else {
                             throw new Error("Invalid proprty, missing expected data \"" + propList[0] + "\" (IDENT: " + ident + ") from data " + JSON.stringify(obj));
                         }
                     }
-                },
-                list;
+                };
 
-            if(!ident.push && !ident.map) {
-                list = ident.split(".").map(function(e){return e.trim()});
+            if (!ident.push && !ident.map) {
+                list = ident.split(".").map(function (e) {return e.trim(); });
             } else {
                 list = ident;
             }
@@ -80,21 +81,19 @@
             recurse(list, obj);
             return ret;
         },
-        resolveNamespace = function(ident, blockStack) {
-            var l = blockStack.length, i = 0, ret = "";
-            for(;i < l; i += 1) {
+        resolveNamespace = function (ident, blockStack) {
+            var l = blockStack.length, i, ret = "";
+            for (i = 0; i < l; i += 1) {
                 ret += blockStack[i] + ".";
             }
             return ret + ident;
         },
-        safeDeepMergeJson = function(obja, objb) {
-            if(typeof(obja) !== 'object'){
-                throw new TypeError("Cannot deep merge with an " + typeof(obja) + ": [Param 1]");
-                return null;
+        safeDeepMergeJson = function (obja, objb) {
+            if (typeof (obja) !== 'object') {
+                throw new TypeError("Cannot deep merge with an " + typeof (obja) + ": [Param 1]");
             }
-            if(typeof(objb) !== 'object'){
-                throw new TypeError("Cannot deep merge with an " + typeof(objb) + ": [Param 2]");
-                return null;
+            if (typeof (objb) !== 'object') {
+                throw new TypeError("Cannot deep merge with an " + typeof (objb) + ": [Param 2]");
             }
 
             return deepMergeJson(deepMergeJson({}, obja), objb);
@@ -158,82 +157,63 @@
             };
             return this;
         },
-        TokenStateMachine = function(stateSet, initial) {
-            var that = this;
-
-            this.stateSet = stateSet || {"start": {}};
-            this.state = initial || "start";
-            this.count = 0;
-
-            this.addState = function(name, transitions) {
-                that.stateSet[name] = transitions;
-            }
-            this.addStateTransition = function(from, to, tokenName, onMove) {
-                that.stateSet[from][tokenName] = {to: to, onMove: onMove};
-            }
-            this.processToken = function(token, context) {
-                var state = that.stateSet[that.state];
-                if(state.hasOwnProperty(token.ident)){
-                    if(state[token.ident].onMove(token, context)){
-                        that.state = state[token.ident].to;
-                    } else {
-                        throw new Error("State machine left in bad state after eating token " + token.ident + ", #" + that.count);
-                    }
-                } else {
-                    throw new Error("Bad token " + token.ident + ", #" + that.count + "; No transition defined for " + that.state);
-                }
-                that.count += 1;
-            }
+        Node = function (type, val, modifiers) {
+            this.ident = type || "N_NULL";
+            this.val = val || null;
+            this.content = modifiers || {};
+            return this;
         },
-        Token = function(ident, val, info) {
+        Token = function (ident, val, info) {
             this.ident = ident || "T_NULL";
             this.val = val || null;
             this.info = info || {};
             return this;
         },
-        tokenise = function(src){
+        tokenise = function (src) {
             var tokens = [],
                 last = 0,
                 i = 0,
                 match = null,
                 matcher,
-                chunk;
+                chunk,
+                tok;
 
-            matcher = function() {
+            matcher = function () {
                 return ((match = captureTags.exec(chunk)) !== null);
-            }
+            };
             while (i < src.length) {
                 chunk = src.substr(i);
-                if(matcher()){
-                    if(match.index > 0) {
+                if (matcher()) {
+                    if (match.index > 0) {
                         tokens.push(new Token("STRING", match.input.substr(0, match.index)));
                     }
-                    tokens.push(new Token("TAG_OPEN", match[1]));
-                    if(match[2] === '#'){
-                        tokens.push(new Token("TAG_MODIFIER_DIRECTIVE", match[2]));
-                        tokens.push(new Token("IDENT", match[3]));
-                        tokens.push(new Token("VALUE", match[4]));
+                    tok = new Token("T_NULL", null, {close: false, escape: false, escapeType: null});
+                    if (match[2] === '#') {
+                        tok.ident = "T_DIRECTIVE";
+                        tok.val = {};
+                        tok.val[match[3]] = match[4];
                     } else {
-                        if(match[2] === '/') {
-                            tokens.push(new Token("TAG_MODIFIER_CLOSE", match[2]));
+                        if (match[2] === '/') {
+                            tok.info.close = true;
                         }
 
-                        if(match[5] === "*") {
-                            tokens.push(new Token("BLOCK_MODIFIER_ITERATE", match[5]));
-                        } else if(match[5] === "&") {
-                            tokens.push(new Token("BLOCK_MODIFIER_CONTEXT", match[5]));
+                        if (match[5] === "*") {
+                            tok.ident = "T_LOOP";
+                        } else if (match[5] === "&") {
+                            tok.ident = "T_BLOCK";
+                        } else {
+                            tok.ident = "T_DATA";
                         }
 
-                        if(typeof(match[6]) !== 'undefined' && match[6].charAt(0) === "!") {
-                            if(typeof(match[7]) !== 'undefined') {
-                                tokens.push(new Token("DATA_MODIFIER_ESCAPE", match[6], {escape: match[7]}));
-                            } else {
-                                tokens.push(new Token("DATA_MODIFIER_ESCAPE", match[6]));
+                        if (typeof (match[6]) !== 'undefined' && match[6].charAt(0) === "!") {
+                            tok.info.escape = true;
+                            if (typeof (match[7]) !== 'undefined') {
+                                tok.info.escapeType = match[7];
                             }
                         }
-                        tokens.push(new Token("IDENT", match[8]));
+                        tok.val = match[8];
                     }
-                    tokens.push(new Token("TAG_CLOSE", match[9]));
+                    tokens.push(tok);
                     i += match.index + match[0].length;
                 } else {
                     tokens.push(new Token("STRING", chunk));
@@ -243,189 +223,98 @@
             tokens.push(new Token("EOD"));
             return tokens;
         },
-        parse = function(tokens, data, options) {
-            options = safeDeepMergeJson(globalOptions, options);
-            var context = {
-                input: tokens,
-                output: "",
-                data: data,
-                options: options,
-                status: {
-                    tagModifiers: {
-                        name: null,
-                        value: null,
-                        close: false,
-                        block: false,
-                        loop: false,
-                        escape: false,
-                        escapeVal: null
-                    },
-                    tagBuffer: new Stack(),
-                    blocks: new Stack(),
-                    unspin: null
+        collapseParse = function (tokens) {
+            var tokenList,
+                i = 0,
+                j,
+                targetToken,
+                targetNode;
+
+            while (i < tokens.length) {
+                if (tokens[i].info && tokens[i].info.close) {
+                    tokenList = [];
+                    targetToken = tokens[i];
+                    j = i - 1;
+
+                    while (!(tokens[j].ident === targetToken.ident && tokens[j].val === targetToken.val)) {
+                        tokenList.push(tokens[j]);
+                        j -= 1;
+                        if (j < 0) {
+                            throw new Error("Unmatched Closing Tag " + targetNode + " at index " + i);
+                        }
+                    }
+
+                    if (targetToken.ident === "T_LOOP") {
+                        targetNode = new Node("N_LOOP", targetToken.val, tokenList.slice().reverse());
+                    } else {
+                        targetNode = new Node("N_BLOCK", targetToken.val, tokenList.slice().reverse());
+                    }
+
+                    tokens.splice(j, (i - j) + 1, targetNode);
+                    i = 0;
+                } else {
+                    i += 1;
                 }
-            },
-                parserdef = {
-                    "global": {
-                        "EOD": {
-                            to: "end",
-                            onMove: function(token, context) {
-                                if(context.status.tagBuffer.length > 0
-                                   || context.status.blocks.length > 0) {
-                                    return false;
-                                } else {
-                                    return true;
-                                }
-                            }
-                        },
-                        "STRING": {
-                            to: "global",
-                            onMove: function(token, context) {
-                                context.output += token.val;
-
-                                return true;
-                            }
-                        },
-                        "TAG_OPEN": {
-                            to: "buildTag",
-                            onMove: function(token, context){
-                                return true;
-                            }
-                        }
-                    },
-                    "buildTag": {
-                        "TAG_MODIFIER_DIRECTIVE": {
-                            to: "buildDirective",
-                            onMove: function(token, context){
-                                return true;
-                            }
-                        },
-                        "TAG_MODIFIER_CLOSE": {
-                            to: "buildTag",
-                            onMove: function(token, context) {
-                                context.status.tagModifiers.close = true;
-                                return true;
-                            }
-                        },
-                        "BLOCK_MODIFIER_ITERATE": {
-                            to: "buildTag",
-                            onMove: function(token, context) {
-                                if(context.status.tagModifiers.block){
-                                    return false;
-                                } else {
-                                    context.status.tagModifiers.loop = true;
-                                    return true;
-                                }
-                            }
-                        },
-                        "BLOCK_MODIFIER_CONTEXT": {
-                            to: "buildTag",
-                            onMove: function(token, context) {
-                                if(context.status.tagModifiers.loop){
-                                    return false;
-                                } else {
-                                    context.status.tagModifiers.block = true;
-                                    return true;
-                                }
-                            }
-                        },
-                        "DATA_MODIFIER_ESCAPE": {
-                            to: "buildTag",
-                            onMove: function(token, context) {
-                                context.status.tagModifiers.escape = true;
-                                context.status.tagModifiers.escapeVal = token.info.escape || context.options.escape;
-
-                                return true;
-                            }
-                        },
-                        "IDENT": {
-                            to: "buildTag",
-                            onMove: function(token, context) {
-                                context.status.tagModifiers.name = token.val;
-                                return true;
-                            }
-                        },
-                        "TAG_CLOSE": {
-                            to: "global",
-                            onMove: function(token, context){
-                                if(context.status.tagModifiers.loop){
-                                    //TODO: Handle loops
-                                    if(context.status.tagModifiers.close){
-                                        //TODO: Handle closed loops
-                                    }
-                                } else if(context.status.tagModifiers.block){
-                                    if(context.status.tagModifiers.close){
-                                        context.status.blocks.pop();
-                                    } else {
-                                        context.status.blocks.push(context.status.tagModifiers.name);
-                                    }
-                                }else {
-                                    var tag = resolveNamespace(context.status.tagModifiers.name, context.status.blocks);
-                                    context.output += getDeepProperty(tag, data);
-                                }
-                                context.status.tagModifiers = {
-                                    name: null,
-                                    value: null,
-                                    close: false,
-                                    block: false,
-                                    loop: false,
-                                    escape: false,
-                                    escapeVal: null,
-                                };
-                                return true;
-                            }
-                        }
-                    },
-                    "buildDirective": {
-                        "IDENT": {
-                            to: "buildDirective",
-                            onMove: function(token, context) {
-                                context.status.tagModifiers.name = token.val;
-                                return true;
-                            }
-                        },
-                        "VALUE": {
-                            to: "buildDirective",
-                            onMove: function(token, context) {
-                                context.status.tagModifiers.val = token.val;
-                                return true;
-                            }
-                        },
-                        "TAG_CLOSE": {
-                            to: "global",
-                            onMove: function(token, context){
-                                setDeepProperty(context.status.tagModifiers.name, context.status.tagModifiers.val, context.options);
-                                context.status.tagModifiers = {
-                                    name: null,
-                                    value: null,
-                                    close: false,
-                                    block: false,
-                                    loop: false,
-                                    escape: false,
-                                    escapeVal: null,
-                                    loopLookahead: null
-                                };
-
-                                return true;
-                            }
-                        }
-                    },
-                    "end": {}
-                },
-                    machine = new TokenStateMachine(parserdef, "global");
-
-            while(tokens.length > 0){
-                machine.processToken(tokens.shift(), context);
             }
+            return tokens;
 
-            return context.output;
         },
-        render = function(src, data, options) {
-            return parse(tokenise(src), data, options);
+        unwindNode = function (output, node, index, arr) {
+            var innerArr, dataArr, content, i, dataVal;
+            switch (node.ident) {
+            case "STRING":
+                return output + node.val;
+
+            case "T_DATA":
+                dataVal = node.val;
+                if (arr.loopTag) {
+                    if (node.val === arr.loopTag.slice(0, -1)) {
+                        dataVal = arr.loopTag + "." + (arr.i).toString();
+                    }
+                }
+                return output + getDeepProperty(dataVal, arr.data);
+
+            case "N_LOOP":
+                content = "";
+
+                innerArr = node.content;
+                innerArr.data = arr.data;
+                innerArr.loopTag = node.val;
+
+                dataArr = getDeepProperty(node.val, arr.data);
+
+                for (i = 0; i < dataArr.length; i += 1) {
+                    innerArr.i = i;
+                    content += innerArr.reduce(unwindNode, "");
+                }
+
+                return output + content;
+
+            case "N_BLOCK":
+                innerArr = node.content;
+                innerArr.data = getDeepProperty(node.val, arr.data);
+                innerArr.loopTag = null;
+                return output + innerArr.reduce(unwindNode, "");
+
+            default:
+                return output;
+            }
+        },
+        render = function (src, data, options) {
+            var nodes = collapseParse(tokenise(src));
+            nodes.data = data;
+            nodes.loopTag = null;
+            nodes.i = null;
+            return nodes.reduce(unwindNode, "");
         };
 
-    render.partial = function(src) {
-        return (function(tokens, data, options){return parse(tokens, data, options);}).bind(null, tokenise(src));
+    render.partial = function (src) {
+        return function (tokens, data, options) {
+            tokens.data = data;
+            tokens.loopTag = null;
+            tokens.i = null;
+            return tokens.reduce(unwindNode, "");
+        }.bind(null, collapseParse(tokenise(src)));
     };
 
     if (typeof module !== "undefined" && module.exports) {
