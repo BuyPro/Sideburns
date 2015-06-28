@@ -2,7 +2,7 @@
 A super small templating library for different types of files
 
 ## Roadmap
-The current version of Sideburns (0.3.x) only supports a subset of the features that will be included in the v1 release;
+The current version of Sideburns (0.5.x) only supports a subset of the features that will be included in the v1 release;
 
 * [Complete] Simple variable replacement
 * [Complete] Automatic looping (Iteration through lists)
