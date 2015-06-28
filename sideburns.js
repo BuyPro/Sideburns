@@ -81,13 +81,22 @@
             recurse(list, obj);
             return ret;
         },
-        resolveNamespace = function (ident, blockStack) {
-            var l = blockStack.length, i, ret = "";
-            for (i = 0; i < l; i += 1) {
-                ret += blockStack[i] + ".";
-            }
-            return ret + ident;
-        },
+        /**
+         * Perform a deep merge that will not modify either of the original objects. Also checks
+         * that both parameters are strictly objects.
+         * @param   {Object} obja The object that forms the base of the return value. All
+         *                      properties in this object will be present in the return
+         *                      object, but may be overwritten with new values. The passed
+         *                      object instance will not be modified.
+         * @param   {Object} objb The object that offers the values to be copied into the
+         *                      first object. All properties in this object will exist in the
+         *                      return object with the values specified. The return object may
+         *                      have other properties if they are defined in obja but not this
+         *                      parameter.
+         * @returns {Object} An object that contains all of the properties of obja and objb, with
+         *                   the values from objb taking precedence if the property is defined in
+         *                   both (The key set is {keys(obja) ∪ keys(objb)}).
+         */
         safeDeepMergeJson = function (obja, objb) {
             if (typeof (obja) !== 'object') {
                 throw new TypeError("Cannot deep merge with an " + typeof (obja) + ": [Param 1]");
@@ -123,52 +132,48 @@
          * [8] The identifier for the data or block that the tag represents. Always present
          **/
         captureTags = /(\[\[)(\#|\/)?\s*(?:([a-zA-Z]+[a-zA-Z0-9]*)\s*\:\s*([a-zA-Z]+[a-zA-Z0-9]*)|([\*\&]?)\s*((?:\!(?:\(([a-zA-Z]+[a-zA-Z0-9]*)\))?)?)\s*([a-zA-Z](?:[a-zA-Z0-9]*(?:\.(?=[a-zA-Z]))?)+))\s*(\]\])/,
-        Stack = function () {
-            var self = this;
-            this.length = 0;
-            this.push = function (val) {
-                self[self.length] = val;
-                self.length += 1;
-            };
-            this.pop = function (val) {
-                var ret = null;
-                if (self.length > 0) {
-                    ret = self[self.length - 1];
-                    self[self.length - 1] = null;
-                    self.length -= 1;
-                }
-                return ret;
-            };
-
-            this.peek = function () {
-                return this.length > 0 ? self[self.length - 1] : null;
-            };
-            this.contains = function (value, compare) {
-                compare = compare || function (a, b) {
-                    return a === b;
-                };
-                var i = this.length;
-                while (i--) {
-                    if (compare(this[i], value)) {
-                        return true;
-                    }
-                }
-                return false;
-            };
-            return this;
-        },
-        Node = function (type, val, modifiers) {
+        /**
+         * A Node represents a sub-group inside a Sideburns
+         * template and typically contains a list of other
+         * Nodes and Tokens
+         * @param   {String} type    A value that identifies the
+         *                         specific type of this Node
+         * @param   {*}    val     The exact value this Node represents
+         * @param   {Array}  content A list of other nodes and tokens
+         * @returns {Node}   The complete node, representing a sub-tree in a
+         *                   Sideburns template
+         */
+        Node = function (type, val, content) {
             this.ident = type || "N_NULL";
             this.val = val || null;
-            this.content = modifiers || {};
+            this.content = content || {};
             return this;
         },
+        /**
+         * A Token represents an atomic unit in a Sideburns template
+         * @param   {String} ident A value that identifies the specific
+         *                       type of this token
+         * @param   {*}    val   The exact value that this token represents
+         * @param   {Object} info  Additional details that further describe this
+         *                       token
+         * @returns {Token}  The complete token, representing an element in a
+         *                   Sideburns template
+         */
         Token = function (ident, val, info) {
             this.ident = ident || "T_NULL";
             this.val = val || null;
             this.info = info || {};
             return this;
         },
+        /**
+         * Takes a Sideburns template and splits it into constituant tokens.
+         * Output is guarenteed to consist of Tokens only, as the template is
+         * not collapsed at this stage.
+         * @param   {String} src The sideburns template that will be split
+         *                     into tokens
+         * @returns {Array}  A list of Tokens that represent all elements of the
+         *                   template
+         */
         tokenise = function (src) {
             var tokens = [],
                 last = 0,
@@ -178,6 +183,8 @@
                 chunk,
                 tok;
 
+            // Possibly hacky, matcher both sets match and returns whether it
+            // has been set to null
             matcher = function () {
                 return ((match = captureTags.exec(chunk)) !== null);
             };
@@ -223,6 +230,14 @@
             tokens.push(new Token("EOD"));
             return tokens;
         },
+        /**
+         * Takes an Array of tokens and collapses positional grouping tokens
+         * into Nodes
+         * @param   {Array} tokens A tokenised template. Should consist entirely
+         *                       of Tokens.
+         * @returns {Array} A list of nodes and tokens that represent blocks and inline
+         *                  elements in the template respectively
+         */
         collapseParse = function (tokens) {
             var tokenList,
                 i = 0,
@@ -259,6 +274,33 @@
             return tokens;
 
         },
+        /**
+         * This is an Array/Reduce function.
+         * Takes an element from the array and evaluates it in
+         * the data context that has been added to the array.
+         * Tokens will be evaluated in place, but Nodes will be
+         * "unwound"; this function is recursively applied to Nodes but
+         * contains no reference counting, so care should be taken to
+         * avoid (the unlikely scenario of) circular references
+         * @param   {String}     output          The result of previously evaluated
+         *                                     nodes. Essentially the 'running total'
+         *                                     of the template so far.
+         * @param   {Token|Node} node            The element to be evaluated
+         * @param   {Number}     index           The position in the current array.
+         *                                     Laregely unused, but needed for access to
+         *                                     arr parameter
+         * @param   {Array}      arr             The array being reduced; should be enhanced with
+         *                                     'data', 'loopTag' and 'i' properties
+         * @param   {Object}     arr.data        The data context used when evaluting data tokens
+         * @param   {?String}    arr.loopTag     The tag of the current loop being evaluated. Will be null
+         *                                     if no loop block is being evaluated
+         * @param   {?Number}    arr.i           The position of the iteration through the current
+         *                                     loop tag. This is distinct from index in that it refers
+         *                                     to the position within a data array, not withing the reduce
+         *                                     function.
+         * @returns {String}     The result of evaluating the current node, appended to the
+         *                                       previous output provided as the first parameter
+         */
         unwindNode = function (output, node, index, arr) {
             var innerArr, dataArr, content, i, dataVal;
             switch (node.ident) {
@@ -300,6 +342,19 @@
                 return output;
             }
         },
+        /**
+         * Links the various stages of the Sideburns compiler together
+         * and returns the end result
+         * @param   {!String} src     The Sideburns template to be rendered
+         * @param   {!Object} data    Contains all of the data that will be
+         *                         referenced inside the Sideburns template
+         * @param   {?Object} options A set of options that will be merged with
+         *                         the global options, but can be overriden
+         *                         inside the template with directives
+         * @returns {String} The rendered template, with data inserted. All
+         *                   whitespace is currently left intact, but this may
+         *                   change in a future version.
+         */
         render = function (src, data, options) {
             var nodes = collapseParse(tokenise(src));
             nodes.data = data;
@@ -308,6 +363,14 @@
             return nodes.reduce(unwindNode, "");
         };
 
+    /**
+     * Partially applies the rendering process, compiling a node list but not
+     * unwinding it, allowing pre-processing of large templates on initialisation
+     * and reducing the need to compile a template on every render.
+     * @param   {String}   src The Sideburns template to be rendered
+     * @returns {Function} A function that takes a data and options parameter, identical
+     *                     to those required by the basic render function.
+     */
     render.partial = function (src) {
         return function (tokens, data, options) {
             tokens.data = data;
