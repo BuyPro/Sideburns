@@ -1,11 +1,14 @@
 {
   "name": "bp-sideburns",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A super small templating library for different types of files",
   "main": "sideburns.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/BuyPro/Sideburns.git"
+  },
+  "scripts": {
+    "test": "node test/Run"
   },
   "keywords": [
     "BuyPro",
