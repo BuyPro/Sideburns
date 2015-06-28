@@ -2,12 +2,20 @@
 A super small templating library for different types of files
 
 ## Roadmap
-The current version of Sideburns (0.5.x) only supports a subset of the features that will be included in the v1 release;
+All basic functionality for version 1.0.x is implemented;
+
+### Version 1
 
 * [Complete] Simple variable replacement
 * [Complete] Automatic looping (Iteration through lists)
 * [Complete] Context switching (Define blocks that will use a nested object as context)
-* [WIP] Optional escaping of variables
+* [Complete] Optional escaping of variables
+* [Complete] Block level options (Directives)
+
+### Planned features
+
+* [Incomplete] Importing templates
+* [Incomplete] Directive Querying
 
 ## Installing Sideburns
 Sideburns works by default with node.js/io.js and vanillajs. For running on a **server**, you can install by using `npm install --save bp-sideburns` and then anywhere in your code require it as per usual `var sideburns = require("bp-sideburns");`. In the **browser**, you simply need to download a copy of `sideburns.js` and include it in a `<script>` tag before the code that uses it. For example:
@@ -26,7 +34,7 @@ Once you've got it installed, the only thing you need to worry about is the `sid
 ### template \<String\>
 The template parameter is a string containing special markup to tell sideburns where to insert your data. A sideburns tag starts with \[\[ (double left square brackets) and ends with ]] (double right square brackets). Any whitespace in the tag is simply ignored, meaning that `[[ name ]]` and `[[name]]` are both equivelent.
 
-The start of the tag can also be given certain modifiers to change its meaning. Two of these create a "block" that will need to be closed with a special closing tag, while the third functions as per the standard tag but will also escape whatever value is to be inserted.
+The start of the tag can also be given certain modifiers to change its meaning. Two of these create a "block" that will need to be closed with a special closing tag, while the others function as per the standard tag but will in some way modify the data.
 
 NB: Check the Roadmap to see which features are currently available. Use of an un-implemented operator will currently be ignored.
 
@@ -84,6 +92,18 @@ I said hey"
 ```
 
 * ! - Works as per the default tag, but also escapes the variable
+
+* \# - Declares a Directive. It will set an option within the current block - the syntax for a directive is
+slightly different than other tags. This example sets the escape method inside the users loop to 'xml', which
+will encode xml entities such as \< to &lt; and & to &amp;
+
+```html
+<ul>[[* users ]]
+  [[# escape: xml]]
+  <li>[[!user]]</li>
+[[/* users ]]</ul>
+```
+
 * / - Indicates that this tag ends the block that was previously opened with the same name _and type_. Blocks _must_ be ended in the reverse order that they were opened in - e.g. if you open a context block called `obj` and then a looping block called `arr`, you **must** close `arr` before you can close `obj`. Any other situation will throw a `SyntaxError`.
 
 ### context \<Object\>

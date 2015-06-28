@@ -6,9 +6,9 @@
             escape: "general",
             escapeSets: {
                 xml: {
+                    "&": "&amp;",
                     "<": "&lt;",
                     ">": "&gt;",
-                    "&": "&amp;",
                     "\"": "&quot;"
                 },
                 general: {
@@ -30,11 +30,20 @@
             }
             return obja;
         },
-        setDeepProperty = function (ident, value, obj) {
+        setDeepProperty = function (ident, value, obj, makepath) {
             var list,
                 recurse = function (propList, value, obj) {
+                    var id;
                     if (propList.length > 1) {
-                        recurse(propList, value, obj[list.shift()]);
+                        id = list.shift();
+                        if (!obj.hasOwnProperty(id)) {
+                            if (makepath) {
+                                obj[id] = {};
+                            } else {
+                                throw new Error("No internal property " + id + " at depth N - " + (list.length));
+                            }
+                        }
+                        recurse(propList, value, obj[id]);
                     } else {
                         obj[propList[0]] = value;
                     }
@@ -106,6 +115,18 @@
             }
 
             return deepMergeJson(deepMergeJson({}, obja), objb);
+        },
+        escapeRegex = function (reg) {
+            return reg.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
+        },
+        escapeData = function (datum, escapes) {
+            var prop;
+            for (prop in escapes) {
+                if (escapes.hasOwnProperty(prop)) {
+                    datum = String(datum).split(prop).join(escapes[prop]);
+                }
+            }
+            return datum;
         },
         /**
          * Using this Regex
@@ -197,8 +218,10 @@
                     tok = new Token("T_NULL", null, {close: false, escape: false, escapeType: null});
                     if (match[2] === '#') {
                         tok.ident = "T_DIRECTIVE";
-                        tok.val = {};
-                        tok.val[match[3]] = match[4];
+                        tok.val = {
+                            key: match[3],
+                            value: match[4]
+                        };
                     } else {
                         if (match[2] === '/') {
                             tok.info.close = true;
@@ -302,10 +325,14 @@
          *                                       previous output provided as the first parameter
          */
         unwindNode = function (output, node, index, arr) {
-            var innerArr, dataArr, content, i, dataVal;
+            var innerArr, dataArr, content, i, dataVal, datum, escapeType;
             switch (node.ident) {
             case "STRING":
                 return output + node.val;
+
+            case "T_DIRECTIVE":
+                setDeepProperty(node.val.key, node.val.value, arr.opts, true);
+                return output;
 
             case "T_DATA":
                 dataVal = node.val;
@@ -314,7 +341,16 @@
                         dataVal = arr.loopTag + "." + (arr.i).toString();
                     }
                 }
-                return output + getDeepProperty(dataVal, arr.data);
+                datum  = getDeepProperty(dataVal, arr.data);
+                if (node.info.escape) {
+                    if (node.info.escapeType) {
+                        escapeType = node.info.escapeType;
+                    } else {
+                        escapeType = arr.opts.escape;
+                    }
+                    datum = escapeData(datum, arr.opts.escapeSets[escapeType]);
+                }
+                return output + datum;
 
             case "N_LOOP":
                 content = "";
@@ -322,6 +358,7 @@
                 innerArr = node.content;
                 innerArr.data = arr.data;
                 innerArr.loopTag = node.val;
+                innerArr.opts = deepMergeJson({}, arr.opts);
 
                 dataArr = getDeepProperty(node.val, arr.data);
 
@@ -336,6 +373,7 @@
                 innerArr = node.content;
                 innerArr.data = getDeepProperty(node.val, arr.data);
                 innerArr.loopTag = null;
+                innerArr.opts = deepMergeJson({}, arr.opts);
                 return output + innerArr.reduce(unwindNode, "");
 
             default:
@@ -360,6 +398,7 @@
             nodes.data = data;
             nodes.loopTag = null;
             nodes.i = null;
+            nodes.opts = safeDeepMergeJson(globalOptions, options);
             return nodes.reduce(unwindNode, "");
         };
 
