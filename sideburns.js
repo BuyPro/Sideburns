@@ -92,6 +92,30 @@
             return ret;
         },
         /**
+         * Uses getDeepProperty to retrieve a property from an
+         * object but emulates normal object value retrieval by
+         * returning undefined if a property doesn't exist instead
+         * of throwing an error
+         * @param   {String} ident The full 'path' of the property
+         *                       to retrieve, where dots denote
+         *                       sub objects and the last portion
+         *                       is the property in the deepest level
+         * @param   {Object} obj   The [JSON] object that you are
+         *                       trying to retrieve a value from
+         * @returns {*}      The data stored under the specified deep
+         *                   identifier, or undefined if the identifier
+         *                   does not resolve
+         */
+        getDeepPropertyOrUndef = function (ident, obj) {
+            var res;
+            try {
+                res = getDeepProperty(ident, obj);
+            } catch (e) {
+                res = undefined;
+            }
+            return res;
+        },
+        /**
          * Perform a deep merge that will not modify either of the original objects. Also checks
          * that both parameters are strictly objects.
          * @param   {Object} obja The object that forms the base of the return value. All
@@ -153,7 +177,7 @@
          *     modifier. It will otherwise be undefined
          * [8] The identifier for the data or block that the tag represents. Always present
          **/
-        captureTags = /(\[\[)(\#|\/)?\s*(?:([a-zA-Z]+[a-zA-Z0-9]*)\s*\:\s*([a-zA-Z]+[a-zA-Z0-9]*)|([\*\&]?)\s*((?:\!(?:\(([a-zA-Z]+[a-zA-Z0-9]*)\))?)?)\s*([a-zA-Z](?:[a-zA-Z0-9]*(?:\.(?=[a-zA-Z]))?)+))\s*(\]\])/,
+        captureTags = /(\[\[)(\#|\/)?\s*(?:([a-zA-Z]+[a-zA-Z0-9]*)\s*\:\s*([a-zA-Z]+[a-zA-Z0-9]*)|([\*\&\>\?]?)\s*((?:\!(?:\(([a-zA-Z]+[a-zA-Z0-9]*)\))?)?)\s*([a-zA-Z](?:[a-zA-Z0-9]*(?:\.(?=[a-zA-Z]))?)+))\s*(\]\])/,
         /**
          * A Node represents a sub-group inside a Sideburns
          * template and typically contains a list of other
@@ -228,12 +252,21 @@
                             tok.info.close = true;
                         }
 
-                        if (match[5] === "*") {
-                            tok.ident = "T_LOOP";
-                        } else if (match[5] === "&") {
-                            tok.ident = "T_BLOCK";
-                        } else {
-                            tok.ident = "T_DATA";
+                        switch(match[5]) {
+                            case "*":
+                                tok.ident = "T_LOOP";
+                                break;
+                            case "&":
+                                tok.ident = "T_BLOCK";
+                                break;
+                            case ">":
+                                tok.ident = "T_IMPORT";
+                                break;
+                            case "?":
+                                tok.ident = "T_CONDITION";
+                                break;
+                            default:
+                                tok.ident = "T_DATA";
                         }
 
                         if (typeof (match[6]) !== 'undefined' && match[6].charAt(0) === "!") {
@@ -267,7 +300,8 @@
                 i = 0,
                 j,
                 targetToken,
-                targetNode;
+                targetNode,
+                nodeName;
 
             while (i < tokens.length) {
                 if (tokens[i].info && tokens[i].info.close) {
@@ -283,11 +317,17 @@
                         }
                     }
 
-                    if (targetToken.ident === "T_LOOP") {
-                        targetNode = new Node("N_LOOP", targetToken.val, tokenList.slice().reverse());
-                    } else {
-                        targetNode = new Node("N_BLOCK", targetToken.val, tokenList.slice().reverse());
+                    switch(targetToken.ident) {
+                        case "T_LOOP":
+                        case "T_BLOCK":
+                        case "T_CONDITION":
+                            nodeName = "N" + targetToken.ident.slice(1);
+                            break;
+                        default:
+                            throw new Error("Invalid block element " + targetToken.ident + " at index " + i);
                     }
+
+                    targetNode = new Node(nodeName, targetToken.val, tokenList.slice().reverse());
 
                     tokens.splice(j, (i - j) + 1, targetNode);
                     i = 0;
@@ -326,7 +366,7 @@
          *                                       previous output provided as the first parameter
          */
         unwindNode = function (output, node, index, arr) {
-            var innerArr, dataArr, content, i, dataVal, datum, escapeType;
+            var innerArr, dataArr, content, i, dataVal, datum, escapeType, ifresult, iff;
             switch (node.ident) {
             case "STRING":
                 return output + node.val;
@@ -353,12 +393,25 @@
                 }
                 return output + datum;
 
+            case "T_IMPORT":
+                content = arr.includes[node.val];
+                if(typeof content !== "undefined" && content !== null) {
+                    datum = content(arr.data, arr.opts);
+                } else {
+                    if (arr.opts.ignoreUndefined) {
+                        datum = "";
+                    } else {
+                        throw new Error("Cannot get include " + node.val);
+                    }
+                }
+                return output + datum;
             case "N_LOOP":
                 content = "";
 
                 innerArr = node.content;
                 innerArr.data = arr.data;
                 innerArr.loopTag = node.val;
+                innerArr.includes = arr.includes;
                 innerArr.opts = deepMergeJson({}, arr.opts);
 
                 dataArr = getDeepProperty(node.val, arr.data);
@@ -374,8 +427,27 @@
                 innerArr = node.content;
                 innerArr.data = getDeepProperty(node.val, arr.data);
                 innerArr.loopTag = null;
+                innerArr.includes = arr.includes;
                 innerArr.opts = deepMergeJson({}, arr.opts);
                 return output + innerArr.reduce(unwindNode, "");
+
+            case "N_CONDITION":
+                iff = getDeepPropertyOrUndef(node.val, arr.opts);
+                    console.log(iff);
+                if (iff) {
+                    console.log("is true");
+                    innerArr = node.content;
+                    innerArr.data = arr.data;
+                    innerArr.loopTag = null;
+                    innerArr.includes = arr.includes;
+                    innerArr.opts = deepMergeJson({}, arr.opts);
+
+                    ifresult = innerArr.reduce(unwindNode, "");
+                } else {
+                    ifresult = "";
+                }
+
+                return output + ifresult;
 
             default:
                 return output;
@@ -399,6 +471,7 @@
             nodes.data = data;
             nodes.loopTag = null;
             nodes.i = null;
+            nodes.includes = render.includes;
             nodes.opts = safeDeepMergeJson(globalOptions, options);
             return nodes.reduce(unwindNode, "");
         };
@@ -416,9 +489,20 @@
             tokens.data = data;
             tokens.loopTag = null;
             tokens.i = null;
+            tokens.includes = render.includes;
+            tokens.opts = safeDeepMergeJson(globalOptions, options);
             return tokens.reduce(unwindNode, "");
         }.bind(null, collapseParse(tokenise(src)));
     };
+
+    render.includes = {};
+    render.addInclude = function (name, template) {
+        if (template.split) {
+            this.includes[name] = render.partial(template);
+        } else {
+            this.includes[name] = template;
+        }
+    }
 
     if (typeof module !== "undefined" && module.exports) {
         module.exports = render;
