@@ -2,9 +2,9 @@
 A super small templating library for different types of files
 
 ## Roadmap
-All basic functionality for version 1.0.x is implemented;
+All basic functionality for version 1.1.x is implemented;
 
-### Version 1
+#### Version 1.0
 
 * [Complete] Simple variable replacement
 * [Complete] Automatic looping (Iteration through lists)
@@ -12,10 +12,10 @@ All basic functionality for version 1.0.x is implemented;
 * [Complete] Optional escaping of variables
 * [Complete] Block level options (Directives)
 
-### Planned features
+#### Version 1.1
 
-* [Incomplete] Importing templates
-* [Incomplete] Directive Querying
+* [Complete] Importing templates
+* [Complete] Directive Querying
 
 ## Installing Sideburns
 Sideburns works by default with node.js/io.js and vanillajs. For running on a **server**, you can install by using `npm install --save bp-sideburns` and then anywhere in your code require it as per usual `var sideburns = require("bp-sideburns");`. In the **browser**, you simply need to download a copy of `sideburns.js` and include it in a `<script>` tag before the code that uses it. For example:
