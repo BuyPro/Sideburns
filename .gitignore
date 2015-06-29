@@ -28,3 +28,4 @@ node_modules
 
 # Don't include local tests (will not affect the eventual unit tests in /test folder)
 /test*.*
+/tmptest
