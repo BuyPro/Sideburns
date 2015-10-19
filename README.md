@@ -18,7 +18,10 @@ All basic functionality for version 1.1.x is implemented;
 * [Complete] Directive Querying
 
 ## Installing Sideburns
-Sideburns works by default with node.js/io.js and vanillajs. For running on a **server**, you can install by using `npm install --save bp-sideburns` and then anywhere in your code require it as per usual `var sideburns = require("bp-sideburns");`. In the **browser**, you simply need to download a copy of `sideburns.js` and include it in a `<script>` tag before the code that uses it. For example:
+Sideburns works by default with node.js/io.js and vanillajs. For running on a **server**, you can install by using `npm install --save bp-sideburns` and then anywhere in your code require it as per usual `var sideburns = require("bp-sideburns");`. 
+
+In the **browser**, you simply need to download a copy of `sideburns.js` and include it in a `<script>` tag before the code that uses it. For example:
+
 ```html
 <script type="application/javascript" src="js/sideburns.js"></script>
 <script>
@@ -41,8 +44,8 @@ NB: Check the Roadmap to see which features are currently available. Use of an u
 The modifiers are as follows:
 
 * & - Creates a block whose context is set to the property with the name provided. For example:
-```javascript
-/* Context: 
+```text
+// Context: 
 {
   name: 'Frank',
   likes: {
@@ -54,7 +57,6 @@ The modifiers are as follows:
     colour: 'green
   }
 }
-*/
 
 //Template:
 "Hi, my name is [[name]] and I like [[& likes]][[animal]] and the colour [[colour]][[/& likes]], but not [[& dislikes]][[animal]] or the colour [[colour]][[/&dislikes]]!"
@@ -64,15 +66,15 @@ The modifiers are as follows:
 ```
 
 * * - Creates a block that will be inserted in-place for every value in the array with the name provided. The current element of the array can be accessed by using the name of the array minus the last character as the variable name. For [example](https://www.youtube.com/watch?v=ZZ5LpwO-An4):
-```javascript
-/* Context:
+```text
+// Context:
 {
   lyrics: [
     "I said hey, what's goin' on?",
     "I said hey"
   ]
 }
-*/
+
 //Template:
 "[[* lyrics]]
 And I say hey, yeah, yeah, yeah yay
