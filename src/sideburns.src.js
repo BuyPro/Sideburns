@@ -465,6 +465,7 @@ var globalOptions = {
      */
     render = function (src, data, options) {
         var nodes = collapseParse(tokenise(src));
+        options = options || {};
         nodes.data = data;
         nodes.loopTag = null;
         nodes.i = null;
@@ -483,6 +484,7 @@ var globalOptions = {
  */
 render.partial = function (src) {
     return function (tokens, data, options) {
+        options = options || {};
         tokens.data = data;
         tokens.loopTag = null;
         tokens.i = null;

@@ -20,6 +20,9 @@ module.exports = function(sb) {
     output = sb(template, data, options);
     assert.strictEqual(output, "My name is john doe, I am 37 years old. It is true that I have a cat.");
 
+    output = sb(template, data);
+    assert.strictEqual(output, "My name is john doe, I am 37 years old. It is true that I have a cat.");
+
     template = fs.readFileSync(__dirname + "/files/simpletagserror.sb").toString();
     assert.throws(function(){
         output = sb(template, data, options);
