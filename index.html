@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Sideburns by Commander-lol</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Sideburns</h1>
+        <p class="header">A super small templating library for different types of files</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/Commander-lol/Sideburns/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/Commander-lol/Sideburns/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/Commander-lol/Sideburns">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/Commander-lol">Commander-lol</a></p>
+
+
+      </header>
+      <section>
+        <h1>
+<a id="sideburns" class="anchor" href="#sideburns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Sideburns</h1>
+
+<p>A super small templating library for different types of files</p>
+
+<h2>
+<a id="roadmap" class="anchor" href="#roadmap" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Roadmap</h2>
+
+<p>All basic functionality for version 1.1.x is implemented;</p>
+
+<h4>
+<a id="version-10" class="anchor" href="#version-10" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 1.0</h4>
+
+<ul>
+<li>[Complete] Simple variable replacement</li>
+<li>[Complete] Automatic looping (Iteration through lists)</li>
+<li>[Complete] Context switching (Define blocks that will use a nested object as context)</li>
+<li>[Complete] Optional escaping of variables</li>
+<li>[Complete] Block level options (Directives)</li>
+</ul>
+
+<h4>
+<a id="version-11" class="anchor" href="#version-11" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Version 1.1</h4>
+
+<ul>
+<li>[Complete] Importing templates</li>
+<li>[Complete] Directive Querying</li>
+</ul>
+
+<h2>
+<a id="installing-sideburns" class="anchor" href="#installing-sideburns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installing Sideburns</h2>
+
+<p>Sideburns works by default with node.js/io.js and vanillajs. For running on a <strong>server</strong>, you can install by using <code>npm install --save bp-sideburns</code> and then anywhere in your code require it as per usual <code>var sideburns = require("bp-sideburns");</code>. </p>
+
+<p>In the <strong>browser</strong>, you simply need to download a copy of <code>sideburns.js</code> and include it in a <code>&lt;script&gt;</code> tag before the code that uses it. For example:</p>
+
+<div class="highlight highlight-text-html-basic"><pre>&lt;<span class="pl-ent">script</span> <span class="pl-e">type</span>=<span class="pl-s"><span class="pl-pds">"</span>application/javascript<span class="pl-pds">"</span></span> <span class="pl-e">src</span>=<span class="pl-s"><span class="pl-pds">"</span>js/sideburns.js<span class="pl-pds">"</span></span>&gt;&lt;/<span class="pl-ent">script</span>&gt;
+<span class="pl-s1">&lt;<span class="pl-ent">script</span>&gt;</span>
+<span class="pl-s1"><span class="pl-en">console</span>.<span class="pl-c1">log</span>(</span>
+<span class="pl-s1">  <span class="pl-en">sideburns</span>(<span class="pl-s"><span class="pl-pds">"</span>Hello [[name]]!<span class="pl-pds">"</span></span>, {<span class="pl-en">name</span><span class="pl-k">:</span> <span class="pl-k">function</span><span class="pl-en">ThatReturnsName</span>()})</span>
+<span class="pl-s1">);</span>
+<span class="pl-s1">&lt;/<span class="pl-ent">script</span>&gt;</span></pre></div>
+
+<h2>
+<a id="using-sideburns" class="anchor" href="#using-sideburns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Using Sideburns</h2>
+
+<p>Once you've got it installed, the only thing you need to worry about is the <code>sideburns(template, context)</code> function. </p>
+
+<h3>
+<a id="template-string" class="anchor" href="#template-string" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>template &lt;String&gt;</h3>
+
+<p>The template parameter is a string containing special markup to tell sideburns where to insert your data. A sideburns tag starts with [[ (double left square brackets) and ends with ]] (double right square brackets). Any whitespace in the tag is simply ignored, meaning that <code>[[ name ]]</code> and <code>[[name]]</code> are both equivelent.</p>
+
+<p>The start of the tag can also be given certain modifiers to change its meaning. Two of these create a "block" that will need to be closed with a special closing tag, while the others function as per the standard tag but will in some way modify the data.</p>
+
+<p>NB: Check the Roadmap to see which features are currently available. Use of an un-implemented operator will currently be ignored.</p>
+
+<p>The modifiers are as follows:</p>
+
+<ul>
+<li>&amp; - Creates a block whose context is set to the property with the name provided. For example:</li>
+</ul>
+
+<pre lang="text"><code>// Context: 
+{
+  name: 'Frank',
+  likes: {
+    animal: 'rabbits',
+    colour: 'red'
+  },
+  dislikes : {
+    animal: 'lions',
+    colour: 'green
+  }
+}
+
+//Template:
+"Hi, my name is [[name]] and I like [[&amp; likes]][[animal]] and the colour [[colour]][[/&amp; likes]], but not [[&amp; dislikes]][[animal]] or the colour [[colour]][[/&amp;dislikes]]!"
+
+//Output:
+"Hi, my name is Frank and I like rabbits and the colour red, but not lions or the colour green!"
+</code></pre>
+
+<ul>
+<li>* - Creates a block that will be inserted in-place for every value in the array with the name provided. The current element of the array can be accessed by using the name of the array minus the last character as the variable name. For <a href="https://www.youtube.com/watch?v=ZZ5LpwO-An4">example</a>:</li>
+</ul>
+
+<pre lang="text"><code>// Context:
+{
+  lyrics: [
+    "I said hey, what's goin' on?",
+    "I said hey"
+  ]
+}
+
+//Template:
+"[[* lyrics]]
+And I say hey, yeah, yeah, yeah yay
+Hey, yay, yay
+[[lyric]]
+
+[[/* lyrics]]"
+
+//Output:
+"And I say hey, yeah, yeah, yeah yay
+Hey, yay, yay
+I said hey, what's goin' on?
+
+And I say hey, yeah, yeah, yeah yay
+Hey, yay, yay
+I said hey"
+</code></pre>
+
+<ul>
+<li><p>! - Works as per the default tag, but also escapes the variable</p></li>
+<li><p># - Declares a Directive. It will set an option within the current block - the syntax for a directive is
+slightly different than other tags. This example sets the escape method inside the users loop to 'xml', which
+will encode xml entities such as &lt; to &lt; and &amp; to &amp;</p></li>
+</ul>
+
+<div class="highlight highlight-text-html-basic"><pre>&lt;<span class="pl-ent">ul</span>&gt;[[* users ]]
+  [[# escape: xml]]
+  &lt;<span class="pl-ent">li</span>&gt;[[!user]]&lt;/<span class="pl-ent">li</span>&gt;
+[[/* users ]]&lt;/<span class="pl-ent">ul</span>&gt;</pre></div>
+
+<ul>
+<li>/ - Indicates that this tag ends the block that was previously opened with the same name <em>and type</em>. Blocks <em>must</em> be ended in the reverse order that they were opened in - e.g. if you open a context block called <code>obj</code> and then a looping block called <code>arr</code>, you <strong>must</strong> close <code>arr</code> before you can close <code>obj</code>. Any other situation will throw a <code>SyntaxError</code>.</li>
+</ul>
+
+<h3>
+<a id="context-object" class="anchor" href="#context-object" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>context &lt;Object&gt;</h3>
+
+<p>The context parameter is simply an object that should contain the properties used in the template, in the correct formats (e.g. names used in context blocks should be objects, names used in looping blocks should be array-like, etc). Looping blocks aren't limited to arrays, but instead can be any object with a <code>length</code> property and numerically indexed values.</p>
+
+<p>At present, any values that are not defined will be inserted in place as 'undefined'. In the case of context and looping blocks, the interpreter will throw an error as it can't access properties of undefined. While an option may be added in future to ignore undefined values/blocks, the current behaviour will remain the default as it is far more likely that such a situation will arise out of user error than be an intended consequence. </p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
