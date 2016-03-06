@@ -1,4 +1,5 @@
-# Sideburns
+![Sideburns Logo](http://commander-lol.github.io/Sideburns/images/sblogo.png)
+# Sideburns 
 A super small templating library for different types of files
 
 ## Roadmap
